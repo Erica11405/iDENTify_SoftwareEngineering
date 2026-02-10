@@ -52,10 +52,12 @@ function Reports() {
       const distributionStr = Object.entries(d.treatmentDistribution || {})
         .map(([k, v]) => `${k}: ${v}`)
         .join(", ");
+      const patientsSeenStr = (d.patientsSeen || []).join(", ");
 
       return [
         d.name,
         d.patientsHandled,
+        patientsSeenStr || "-",
         distributionStr || "None",
         `${Math.round(d.avgTimePerPatient || 0)} min`
       ];
@@ -63,7 +65,7 @@ function Reports() {
 
     autoTable(doc, {
       startY: finalY + 20,
-      head: [['Dentist', 'Patients', 'Procedures', 'Avg Time']],
+      head: [['Dentist', 'Patients', 'Patients Seen', 'Procedures', 'Avg Time']],
       body: performanceBody,
     });
 
@@ -86,6 +88,7 @@ function Reports() {
     const performanceData = dentistPerformance.map(d => ({
       Dentist: d.name,
       Patients_Handled: d.patientsHandled,
+      Patients_Seen: (d.patientsSeen || []).join(", ") || "-",
       Avg_Time_Per_Patient: `${Math.round(d.avgTimePerPatient || 0)} min`,
       Treatment_Distribution: Object.entries(d.treatmentDistribution || {})
         .map(([k, v]) => `${k}: ${v}`)
@@ -174,18 +177,20 @@ function Reports() {
                 <tr>
                   <th>Dentist</th>
                   <th>Patients Handled</th>
+                  <th>Patients Seen</th>
                   <th>Treatment Distribution</th>
                   <th>Avg. Time per Patient</th>
                 </tr>
               </thead>
               <tbody>
                 {dentistPerformance.length === 0 && (
-                  <tr><td colSpan="4">No performance data recorded for this date.</td></tr>
+                  <tr><td colSpan="5">No performance data recorded for this date.</td></tr>
                 )}
                 {dentistPerformance.map((dentist) => (
                   <tr key={dentist.id}>
                     <td>{dentist.name}</td>
                     <td>{dentist.patientsHandled}</td>
+                    <td>{(dentist.patientsSeen || []).join(", ") || "-"}</td>
                     <td>
                       {Object.entries(dentist.treatmentDistribution || {})
                         .map(([key, value]) => `${key}: ${value}`)

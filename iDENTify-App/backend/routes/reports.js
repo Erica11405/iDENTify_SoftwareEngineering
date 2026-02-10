@@ -70,6 +70,16 @@ router.get("/", async (req, res) => {
       WHERE DATE(appointment_datetime) = ? AND status = 'Done' AND dentist_id IS NOT NULL
       GROUP BY dentist_id, reason
     `, [reportDate]);
+
+    const [patientsByDentistRes] = await db.query(`
+      SELECT
+        a.dentist_id,
+        COALESCE(p.full_name, p.name) as patientName
+      FROM appointments a
+      JOIN patients p ON p.id = a.patient_id
+      WHERE DATE(a.appointment_datetime) = ? AND a.status = 'Done' AND a.dentist_id IS NOT NULL
+      ORDER BY patientName
+    `, [reportDate]);
     
     const distributionMap = distributionRes.reduce((acc, row) => {
         if (!acc[row.dentist_id]) {
@@ -80,8 +90,19 @@ router.get("/", async (req, res) => {
         return acc;
     }, {});
 
+    const patientsMap = patientsByDentistRes.reduce((acc, row) => {
+      if (!acc[row.dentist_id]) {
+        acc[row.dentist_id] = [];
+      }
+      if (row.patientName) {
+        acc[row.dentist_id].push(row.patientName);
+      }
+      return acc;
+    }, {});
+
     dentistPerformance.forEach(dentist => {
         dentist.treatmentDistribution = distributionMap[dentist.id] || {};
+      dentist.patientsSeen = patientsMap[dentist.id] || [];
     });
 
     res.json({
